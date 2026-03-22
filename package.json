@@ -3,13 +3,20 @@
   "displayName": "Contextly",
   "description": "Injects persistent developer context.",
   "version": "0.0.1",
+  "publisher": "idealidler",
+  "repository": {
+  "type": "git",
+  "url": "https://github.com/idealidler/contextly"
+},
   "engines": {
     "vscode": "^1.110.0"
   },
   "categories": [
     "Other"
   ],
-  "activationEvents": ["*"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
