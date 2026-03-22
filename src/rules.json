@@ -1,0 +1,5 @@
+{
+    "python": "Stack: Python + SQL.\nRules:\n1. Always use SQLAlchemy ORM.\n2. Enforce strict snake_case naming.\n3. Write robust docstrings.",
+    "sql": "Stack: Databricks SQL.\nRules:\n1. Always use CTEs instead of subqueries.\n2. Keywords must be UPPERCASE.\n3. Filter out soft deletes (is_active = True).",
+    "dax": "Model: Sales_Core.\nRules:\n1. Always use DIVIDE() instead of '/'.\n2. Time intelligence must reference 'Dim_Date'[Date].\n3. Format measures with line breaks for readability."
+}
