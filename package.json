@@ -2,7 +2,7 @@
   "name": "contextly",
   "displayName": "Contextly",
   "description": "Injects persistent developer context.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "idealidler",
   "repository": {
   "type": "git",
