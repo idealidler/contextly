@@ -3,60 +3,106 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('Contextly is ready for injection!');
-
     const rulesPath = path.join(context.extensionPath, 'src', 'rules.json');
-    
-    // This variable will hold the correct rule so it's ready to copy at a moment's notice
     let currentPayload = "";
+    let selectedModel = ""; // Empty string means "Auto-Detect"
 
-    // 1. Create the UI: A sleek button in the bottom right of VS Code
-    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    statusBarItem.command = 'contextly.copyContext'; // Links the button to our command below
-    context.subscriptions.push(statusBarItem);
+    // ---------------------------------------------------------
+    // UI: Create the Two Buttons
+    // ---------------------------------------------------------
+    // Button 1: The Model Selector (Priority 101 puts it on the left)
+    const modelButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 2);
+    modelButton.command = 'contextly.selectModel';
+    modelButton.tooltip = "Click to change business context";
+    context.subscriptions.push(modelButton);
 
-    // 2. Create the Action: What happens when you click the button
+    // Button 2: The Copy Action (Priority 100 puts it on the right)
+    const copyButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 1);
+    copyButton.command = 'contextly.copyContext';
+    copyButton.text = "$(clippy) Copy Context"; // $(clippy) uses VS Code's native clipboard icon
+    copyButton.tooltip = "Copy context to clipboard for AI";
+    context.subscriptions.push(copyButton);
+
+    // ---------------------------------------------------------
+    // ACTIONS: What happens when you click the buttons
+    // ---------------------------------------------------------
+    // Action 1: Copy to Clipboard
     let copyCommand = vscode.commands.registerCommand('contextly.copyContext', () => {
         if (currentPayload) {
-            // Secretly write the context to the Mac clipboard
             vscode.env.clipboard.writeText(`[SYSTEM CONTEXT: ${currentPayload}]`);
-            // Show a quick success message
-            vscode.window.showInformationMessage('🧠 Contextly payload copied! Ready to paste to AI.');
+            vscode.window.showInformationMessage('🧠 Contextly payload copied! Ready to paste.');
         }
     });
-    context.subscriptions.push(copyCommand);
 
-    // 3. Update the Listener: Instead of an annoying pop-up, it updates the UI button silently
-    const checkLanguage = (document: vscode.TextDocument) => {
-        let documentLanguage = document.languageId;
+    // Action 2: Open the Dropdown Menu
+    let selectModelCommand = vscode.commands.registerCommand('contextly.selectModel', async () => {
+        if (!fs.existsSync(rulesPath)) return;
+        
+        const rules = JSON.parse(fs.readFileSync(rulesPath, 'utf8'));
+        const models = Object.keys(rules.models || {});
 
-        if (fs.existsSync(rulesPath)) {
-            const rulesData = fs.readFileSync(rulesPath, 'utf8');
-            const rules = JSON.parse(rulesData);
+        const selection = await vscode.window.showQuickPick(['[Auto-Detect Language]', ...models], {
+            placeHolder: 'Select a Semantic Model to override default language rules'
+        });
 
-            if (rules[documentLanguage]) {
-                currentPayload = rules[documentLanguage];
-                // Update the button text with a cool icon and show it
-                statusBarItem.text = `$(zap) Contextly: ${documentLanguage.toUpperCase()}`;
-                statusBarItem.show();
+        if (selection) {
+            if (selection === '[Auto-Detect Language]') {
+                selectedModel = ""; // Reset to auto
+                if (vscode.window.activeTextEditor) {
+                    checkLanguage(vscode.window.activeTextEditor.document);
+                }
             } else {
-                // If it's plain text or has no rules, hide the button so it stays out of your way
-                currentPayload = "";
-                statusBarItem.hide();
+                // Apply manual override
+                selectedModel = selection;
+                currentPayload = rules.models[selection];
+                modelButton.text = `🎯 Model: ${selection}`;
             }
+        }
+    });
+
+    // ---------------------------------------------------------
+    // LISTENER: The Smart Auto-Detector
+    // ---------------------------------------------------------
+    const checkLanguage = (document: vscode.TextDocument) => {
+        if (!fs.existsSync(rulesPath)) return;
+        const rules = JSON.parse(fs.readFileSync(rulesPath, 'utf8'));
+
+        let documentLanguage = document.languageId;
+        // Hard-catch for modern Analytics Engineering file types
+        if (document.fileName.endsWith('.tmdl')) documentLanguage = 'tmdl';
+        if (document.fileName.endsWith('.pbip')) documentLanguage = 'pbip';
+
+        // If a manual model is locked in, keep it active and do nothing else.
+        if (selectedModel) {
+            modelButton.show();
+            copyButton.show();
+            return; 
+        }
+
+        // AUTO-DETECT LOGIC (The fallback you requested)
+        if (rules.languages && rules.languages[documentLanguage]) {
+            currentPayload = rules.languages[documentLanguage];
+            modelButton.text = `🎯 Model: Auto (${documentLanguage.toUpperCase()})`;
+            modelButton.show();
+            copyButton.show();
+        } else {
+            // Unrecognized file type: hide everything to keep the UI clean
+            currentPayload = "";
+            modelButton.hide();
+            copyButton.hide();
         }
     };
 
-    // Listeners
+    // Keep it running in the background
     let tabListener = vscode.window.onDidChangeActiveTextEditor(editor => {
-        if (editor) { checkLanguage(editor.document); }
+        if (editor) checkLanguage(editor.document);
     });
     let docListener = vscode.workspace.onDidOpenTextDocument(document => {
         checkLanguage(document);
     });
-    context.subscriptions.push(tabListener, docListener);
 
-    // Run the check immediately when the extension wakes up, just in case a file is already open
+    context.subscriptions.push(copyCommand, selectModelCommand, tabListener, docListener);
+
     if (vscode.window.activeTextEditor) {
         checkLanguage(vscode.window.activeTextEditor.document);
     }

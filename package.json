@@ -2,7 +2,7 @@
   "name": "contextly",
   "displayName": "Contextly",
   "description": "Injects persistent developer context.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "idealidler",
   "repository": {
   "type": "git",
@@ -23,6 +23,10 @@
       {
         "command": "contextly.copyContext",
         "title": "Contextly: Copy AI Context"
+      },
+      {
+        "command": "contextly.selectModel",
+        "title": "Contextly: Select Semantic Model"
       }
     ]
   },

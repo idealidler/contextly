@@ -1,5 +1,13 @@
 {
-    "python": "Stack: Python + SQL.\nRules:\n1. Always use SQLAlchemy ORM.\n2. Enforce strict snake_case naming.\n3. Write robust docstrings.",
-    "sql": "Stack: Databricks SQL.\nRules:\n1. Always use CTEs instead of subqueries.\n2. Keywords must be UPPERCASE.\n3. Filter out soft deletes (is_active = True).",
-    "dax": "Model: Sales_Core.\nRules:\n1. Always use DIVIDE() instead of '/'.\n2. Time intelligence must reference 'Dim_Date'[Date].\n3. Format measures with line breaks for readability."
+    "languages": {
+        "tmdl": "Stack: Power BI TMDL.\nRules:\n1. Use standard // for comments.\n2. Always assign measures to a DisplayFolder.\n3. Format underlying DAX expressions with line breaks and 4-space indentation.\n4. Avoid implicit measures; always define explicitly.",
+        "pbip": "Stack: Power BI Project (PBIP).\nRules:\n1. Ensure dataset and report definition files remain properly linked.\n2. Do not manually edit auto-generated system properties.",
+        "sql": "Stack: SQL (dbt/Snowflake).\nRules:\n1. Always use CTEs instead of subqueries.\n2. Keywords must be UPPERCASE.\n3. Filter out soft deletes (is_active = True).",
+        "yml": "Stack: dbt YAML.\nRules:\n1. Every column must have a description.\n2. Enforce primary key tests (unique, not_null).",
+        "python": "Stack: Python.\nRules:\n1. Always use SQLAlchemy ORM.\n2. Enforce strict snake_case naming.\n3. Use Type Hints for all function arguments."
+    },
+    "models": {
+        "Fleet_Operations": "Model: Fleet Operations Core.\nRules:\n1. Fact table = 'Fct_Vehicle_Telemetry'.\n2. Mileage calculations must use 'MAX(odometer_reading) - MIN(odometer_reading)'.\n3. Always join to 'Dim_Vehicle' using 'vin_sk'.",
+        "Financial_Leasing": "Model: Financial Leasing.\nRules:\n1. Fact table = 'Fct_Lease_Agreements'.\n2. Always filter out terminated leases unless historically requested.\n3. Use DIVIDE() for all margin calculations."
+    }
 }
