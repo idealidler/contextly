@@ -6,7 +6,7 @@ export function activate(context: vscode.ExtensionContext) {
     let currentPayload = "";
 
     // ---------------------------------------------------------
-    // THE UI: One powerful, persistent button
+    // THE UI: The Persistent Status Bar Button
     // ---------------------------------------------------------
     const modelButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     modelButton.command = 'contextly.selectModel';
@@ -16,7 +16,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(modelButton);
 
     // ---------------------------------------------------------
-    // HELPER: Get the local workspace file path
+    // HELPER: Get the local workspace file path securely
     // ---------------------------------------------------------
     const getWorkspaceRulesPath = (): string | null => {
         if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
@@ -27,7 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
     };
 
     // ---------------------------------------------------------
-    // ACTION: The One-Stop Dropdown Menu
+    // ACTION: The Dropdown Menu
     // ---------------------------------------------------------
     let selectModelCommand = vscode.commands.registerCommand('contextly.selectModel', async () => {
         const rulesPath = getWorkspaceRulesPath();
@@ -45,7 +45,8 @@ export function activate(context: vscode.ExtensionContext) {
                 rules = JSON.parse(fs.readFileSync(rulesPath, 'utf8'));
                 models = Object.keys(rules.models || {});
             } catch (error) {
-                vscode.window.showErrorMessage('Contextly: Your local .contextly.json file is corrupted.');
+                vscode.window.showErrorMessage('Contextly Error: Your local .contextly.json file is corrupted.');
+                return;
             }
         }
 
@@ -77,7 +78,6 @@ export function activate(context: vscode.ExtensionContext) {
             { enableScripts: true }
         );
 
-        // Fetch existing models to populate the dashboard
         const rulesPath = getWorkspaceRulesPath();
         let existingModels = {};
         if (rulesPath && fs.existsSync(rulesPath)) {
@@ -96,11 +96,9 @@ export function activate(context: vscode.ExtensionContext) {
                 try { rulesData = JSON.parse(fs.readFileSync(currentRulesPath, 'utf8')); } 
                 catch (e) { /* ignore */ }
             }
-            if (!rulesData.models) {
-                rulesData.models = {};
-            }
+            if (!rulesData.models) rulesData.models = {};
 
-            // HANDLE SAVE (Create / Update)
+            // --- SAVE LOGIC ---
             if (message.command === 'saveModel') {
                 rulesData.models[message.modelName] = message.modelContext;
                 fs.writeFileSync(currentRulesPath, JSON.stringify(rulesData, null, 4));
@@ -109,17 +107,26 @@ export function activate(context: vscode.ExtensionContext) {
                 modelButton.text = `🎯 Model: ${message.modelName}`;
                 vscode.env.clipboard.writeText(`[SYSTEM CONTEXT: \n${currentPayload}\n]`);
 
-                vscode.window.showInformationMessage(`✅ '${message.modelName}' saved and copied to clipboard!`);
+                vscode.window.showInformationMessage(`✅ Contextly: '${message.modelName}' saved and copied to clipboard!`);
                 panel.dispose();
             }
 
-            // HANDLE DELETE
+            // --- DELETE LOGIC ---
             if (message.command === 'deleteModel') {
-                if (rulesData.models[message.modelName]) {
-                    delete rulesData.models[message.modelName];
+                const targetModel = message.modelName;
+                
+                if (rulesData.models && typeof rulesData.models[targetModel] !== 'undefined') {
+                    delete rulesData.models[targetModel];
                     fs.writeFileSync(currentRulesPath, JSON.stringify(rulesData, null, 4));
-                    vscode.window.showInformationMessage(`🗑️ Contextly: '${message.modelName}' has been deleted.`);
-                    // We do NOT dispose the panel here so the user can keep managing other models
+                    
+                    vscode.window.showInformationMessage(`🗑️ Contextly: '${targetModel}' has been permanently deleted.`);
+                    
+                    if (modelButton.text === `🎯 Model: ${targetModel}`) {
+                        modelButton.text = `🎯 Select Semantic Model`;
+                        currentPayload = "";
+                    }
+                } else {
+                    vscode.window.showErrorMessage(`Contextly Error: Could not find '${targetModel}' to delete.`);
                 }
             }
         });
@@ -129,7 +136,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // ---------------------------------------------------------
-// HTML/CSS: The CRUD UI Dashboard
+// HTML/CSS: The Dashboard UI
 // ---------------------------------------------------------
 function getDashboardUI(models: any) {
     const modelsJson = JSON.stringify(models);
@@ -145,18 +152,29 @@ function getDashboardUI(models: any) {
             h1 { font-weight: 300; margin-bottom: 5px; }
             p { opacity: 0.8; font-size: 14px; margin-bottom: 30px; line-height: 1.5; }
             
-            /* The List of Existing Models */
             .model-list { margin-bottom: 40px; border-bottom: 1px solid var(--vscode-panel-border); padding-bottom: 20px; }
-            .model-item { display: flex; justify-content: space-between; align-items: center; background-color: var(--vscode-editorWidget-background); padding: 12px 16px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--vscode-input-border); }
+            .model-item { display: flex; justify-content: space-between; align-items: center; background-color: var(--vscode-editorWidget-background); padding: 12px 16px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--vscode-input-border); min-height: 32px; }
             .model-name { font-weight: bold; font-size: 14px; }
-            .model-actions button { margin-left: 8px; padding: 6px 12px; font-size: 12px; border-radius: 4px; cursor: pointer; border: none; font-weight: bold; }
+            
+            /* Action Button Groups */
+            .model-actions { display: flex; gap: 8px; }
+            .confirm-actions { display: none; align-items: center; gap: 8px; font-size: 13px; font-weight: bold; color: #d32f2f; }
+            
+            button { padding: 6px 12px; font-size: 12px; border-radius: 4px; cursor: pointer; border: none; font-weight: bold; transition: all 0.2s; }
+            
             .btn-edit { background-color: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
             .btn-edit:hover { background-color: var(--vscode-button-secondaryHoverBackground); }
-            .btn-delete { background-color: #d32f2f; color: white; }
-            .btn-delete:hover { background-color: #b71c1c; }
+            .btn-delete { background-color: transparent; color: #d32f2f; border: 1px solid #d32f2f; }
+            .btn-delete:hover { background-color: #d32f2f; color: white; }
+            
+            /* Yes / No Buttons */
+            .btn-yes { background-color: #d32f2f; color: white; }
+            .btn-yes:hover { background-color: #b71c1c; }
+            .btn-no { background-color: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
+            .btn-no:hover { background-color: var(--vscode-button-secondaryHoverBackground); }
+
             .empty-state { font-style: italic; opacity: 0.6; font-size: 13px; }
 
-            /* The Form */
             .form-section-title { font-size: 18px; font-weight: 300; margin-bottom: 15px; border-bottom: 1px solid var(--vscode-panel-border); padding-bottom: 5px; }
             .form-group { margin-bottom: 24px; }
             label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; }
@@ -164,7 +182,6 @@ function getDashboardUI(models: any) {
             input:focus, textarea:focus { outline: 1px solid var(--vscode-focusBorder); border-color: var(--vscode-focusBorder); }
             textarea { resize: vertical; min-height: 200px; line-height: 1.6; }
             
-            /* Main Save Button */
             .btn-save { background-color: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; padding: 14px 24px; font-size: 14px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; transition: opacity 0.2s; }
             .btn-save:hover { background-color: var(--vscode-button-hoverBackground); }
         </style>
@@ -173,8 +190,7 @@ function getDashboardUI(models: any) {
         <h1>Semantic Model Manager</h1>
         <p>Manage the business logic and formatting rules for your workspace. This data is securely saved to your local repository.</p>
 
-        <div class="model-list" id="modelListContainer">
-            </div>
+        <div class="model-list" id="modelListContainer"></div>
 
         <h2 class="form-section-title" id="formTitle">Create New Model</h2>
 
@@ -199,7 +215,6 @@ function getDashboardUI(models: any) {
             const contextInput = document.getElementById('modelContext');
             const formTitle = document.getElementById('formTitle');
 
-            // Render the list of models
             function renderModels() {
                 listContainer.innerHTML = '';
                 const keys = Object.keys(savedModels);
@@ -217,6 +232,7 @@ function getDashboardUI(models: any) {
                     nameSpan.className = 'model-name';
                     nameSpan.innerText = key;
                     
+                    // --- 1. Standard Actions (Edit & Delete) ---
                     const actionsDiv = document.createElement('div');
                     actionsDiv.className = 'model-actions';
                     
@@ -228,48 +244,73 @@ function getDashboardUI(models: any) {
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'btn-delete';
                     deleteBtn.innerText = 'Delete';
-                    deleteBtn.onclick = () => deleteModel(key);
                     
                     actionsDiv.appendChild(editBtn);
                     actionsDiv.appendChild(deleteBtn);
+
+                    // --- 2. Confirmation Actions (Are you sure? Yes/No) ---
+                    const confirmDiv = document.createElement('div');
+                    confirmDiv.className = 'confirm-actions';
+                    
+                    const warningText = document.createElement('span');
+                    warningText.innerText = 'Are you sure?';
+                    
+                    const yesBtn = document.createElement('button');
+                    yesBtn.className = 'btn-yes';
+                    yesBtn.innerText = 'Yes';
+                    
+                    const noBtn = document.createElement('button');
+                    noBtn.className = 'btn-no';
+                    noBtn.innerText = 'No';
+                    
+                    confirmDiv.appendChild(warningText);
+                    confirmDiv.appendChild(yesBtn);
+                    confirmDiv.appendChild(noBtn);
+
+                    // --- 3. The Interactive Logic ---
+                    
+                    // Clicking 'Delete' hides standard buttons, shows Yes/No
+                    deleteBtn.onclick = () => {
+                        actionsDiv.style.display = 'none';
+                        confirmDiv.style.display = 'flex';
+                    };
+                    
+                    // Clicking 'No' hides Yes/No, brings back standard buttons
+                    noBtn.onclick = () => {
+                        confirmDiv.style.display = 'none';
+                        actionsDiv.style.display = 'flex';
+                    };
+                    
+                    // Clicking 'Yes' actually executes the deletion
+                    yesBtn.onclick = () => {
+                        delete savedModels[key];
+                        renderModels();
+                        
+                        if (nameInput.value === key) {
+                            nameInput.value = '';
+                            contextInput.value = '';
+                            formTitle.innerText = "Create New Model";
+                        }
+                        vscode.postMessage({ command: 'deleteModel', modelName: key });
+                    };
+                    
                     item.appendChild(nameSpan);
                     item.appendChild(actionsDiv);
+                    item.appendChild(confirmDiv);
                     
                     listContainer.appendChild(item);
                 });
             }
 
-            // Load a model into the form for editing
             function loadForEdit(key) {
                 nameInput.value = key;
                 contextInput.value = savedModels[key];
                 formTitle.innerText = "Edit Model: " + key;
-                window.scrollTo(0, document.body.scrollHeight); // scroll down to form
+                window.scrollTo(0, document.body.scrollHeight);
             }
 
-            // Delete a model
-            function deleteModel(key) {
-                if (confirm('Are you sure you want to delete "' + key + '"?')) {
-                    // Remove from local UI state
-                    delete savedModels[key];
-                    renderModels();
-                    
-                    // Clear form if they were currently editing it
-                    if (nameInput.value === key) {
-                        nameInput.value = '';
-                        contextInput.value = '';
-                        formTitle.innerText = "Create New Model";
-                    }
-
-                    // Tell VS Code to delete it from the JSON file
-                    vscode.postMessage({ command: 'deleteModel', modelName: key });
-                }
-            }
-
-            // Initial render
             renderModels();
 
-            // Save button listener
             document.getElementById('saveBtn').addEventListener('click', () => {
                 const name = nameInput.value.trim();
                 const context = contextInput.value.trim();
@@ -281,5 +322,3 @@ function getDashboardUI(models: any) {
     </body>
     </html>`;
 }
-
-export function deactivate() {}
