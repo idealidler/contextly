@@ -1,22 +1,26 @@
 # Contextly
 
-A persistent developer context layer for Visual Studio Code that bridges the gap between generic AI coding assistants and enterprise-grade data engineering.
+A secure, local-first VS Code extension designed specifically for Data and Analytics Engineers to manage and inject business logic, architectural rules, and formatting standards directly into AI coding assistants.
 
-Contextly silently listens to your active workspace and seamlessly prepares your specific architectural, styling, and business rules, perfectly formatting them for any AI coding assistant.
+Stop typing the same table relationships, DAX formatting standards, and time-intelligence rules into ChatGPT or GitHub Copilot. Contextly allows you to define your Semantic Models once and instantly copy their specific context to your clipboard with a single click.
 
-## Features
+## 🔒 Enterprise-Grade Security & Privacy
 
-* **Smart Language Detection:** Automatically detects when you switch between different file types (e.g., Python, SQL, DAX).
-* **Context Vault:** Reads from a local `rules.json` configuration file to pull the exact architectural rules and business logic for your active stack or semantic model.
-* **One-Click AI Injection:** Provides a clean status bar button (`⚡ Contextly`) that instantly copies a pre-formatted `[SYSTEM CONTEXT]` payload to your clipboard, ready to be pasted into GitHub Copilot, ChatGPT, Claude, or any other AI assistant.
+Contextly is designed for enterprise environments where data privacy is paramount. 
+* **100% Local Storage:** Your semantic model rules are saved locally to a hidden `.contextly.json` file inside your active VS Code workspace. 
+* **Zero Telemetry:** The extension makes absolutely zero external API calls. Your business logic, table names, and architectural rules never leave your machine.
+* **Git-Friendly:** Because rules are saved at the workspace level, you can securely commit your `.contextly.json` file to your internal Git repository. When your teammates pull the repo, Contextly automatically syncs their AI prompts with your team's exact standards.
 
-## How to Use
+## ✨ Features
 
-1. Open a supported file in your workspace (like a `.py` script or a `.dax` measure).
-2. Look for the `⚡ Contextly` button in the bottom right status bar.
-3. Click the button to copy the context rules to your clipboard.
-4. Paste the context directly into your AI prompt before asking your question to ensure the generated code perfectly matches your team's standards.
+* **🎯 Single-Click Workflow:** A persistent status bar button gives you instant access to your models. Click a model, and its exact rules are instantly copied to your clipboard, formatted perfectly for your AI.
+* **🖥️ Visual Dashboard:** Never wrestle with formatting JSON files. Contextly includes a built-in, native Webview dashboard to seamlessly create, edit, and manage your semantic models and business rules.
+* **⚡ Frictionless Context Switching:** Jumping between a Fleet Operations model and a Financial model? Switch your active AI context in less than two seconds without ever opening the command palette.
 
-## Configuration
+## 🚀 Quick Start Guide
 
-Context rules are managed locally in the `src/rules.json` file. Map your file extensions or specific semantic models to the required business logic, naming conventions, and technical constraints.
+1. Open your data repository or workspace folder in VS Code.
+2. Look for the **`🎯 Select Semantic Model`** button in the bottom right corner of your status bar.
+3. Click it and select **`[➕ Manage Semantic Models]`** to open the visual dashboard.
+4. Define your Semantic Model's name (e.g., `Core_Sales_Model`) and paste in your business rules, fact table names, and coding standards. Click Save.
+5. Whenever you are ready to prompt your AI, click the status bar button, select your model, and the context is instantly loaded to your clipboard! Hit `Cmd + V` (or `Ctrl + V`) in your AI chat window.

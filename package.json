@@ -21,12 +21,12 @@
   "contributes": {
     "commands": [
       {
-        "command": "contextly.copyContext",
-        "title": "Contextly: Copy AI Context"
-      },
-      {
         "command": "contextly.selectModel",
         "title": "Contextly: Select Semantic Model"
+      },
+      {
+        "command": "contextly.openDashboard",
+        "title": "Contextly: Open Dashboard"
       }
     ]
   },
