@@ -2,7 +2,7 @@
   "name": "contextly",
   "displayName": "Contextly",
   "description": "Injects persistent developer context.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "idealidler",
   "repository": {
   "type": "git",
@@ -22,11 +22,15 @@
     "commands": [
       {
         "command": "contextly.selectModel",
-        "title": "Contextly: Select Semantic Model"
+        "title": "Contextly: Select Context"
+      },
+      {
+        "command": "contextly.insertActiveModel",
+        "title": "Contextly: Open Active Context in Chat"
       },
       {
         "command": "contextly.openDashboard",
-        "title": "Contextly: Open Dashboard"
+        "title": "Contextly: Manage Contexts"
       }
     ]
   },
